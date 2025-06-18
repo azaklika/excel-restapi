@@ -1,10 +1,16 @@
-# CSV REST API
+# CSV/XLSX REST API
 
-This repository contains a simple FastAPI application that exposes data from a CSV file over a REST API. Authentication is token-based via the `Authorization` header or `token` query parameter.
+This repository contains a simple FastAPI application that exposes data from a
+CSV file over a REST API. It can also read data from an `xlsx` spreadsheet if a
+`data.xlsx` file is present. In that case the file is converted on the fly using
+`openpyxl`. Authentication is token-based via the `Authorization` header or
+`token` query parameter.
 
 ## Setup
 
-All required Python packages are preinstalled in the Codex environment. To run the server manually, use:
+All required Python packages are preinstalled in the Codex environment. The
+application looks for `data.csv` by default, falling back to `data.xlsx` if the
+CSV file is missing. To run the server manually, use:
 
 ```bash
 uvicorn app:app --reload
