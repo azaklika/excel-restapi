@@ -1,9 +1,11 @@
 import csv
+import os
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import JSONResponse
 import logging
 from typing import List
 from pydantic import BaseModel
+import openpyxl
 
 TOKEN = "secret-token"
 
@@ -16,9 +18,11 @@ class Item(BaseModel):
     name: str
     value: int
 
-# Load CSV data once at startup
+# Load data once at startup. Prefer CSV, but also handle XLSX files.
 items: List[Item] = []
 try:
+=======
+if os.path.exists("data.csv"):
     with open("data.csv", newline="") as csvfile:
         reader = csv.DictReader(csvfile)
         for row in reader:
@@ -29,6 +33,29 @@ except FileNotFoundError:
     logging.error("data.csv not found. Starting with empty item list.")
 except Exception as e:
     logging.error(f"Failed to load CSV data: {e}")
+=======
+                Item(
+                    id=int(row["id"]),
+                    name=row["name"],
+                    value=int(row["value"]),
+                )
+            )
+elif os.path.exists("data.xlsx"):
+    wb = openpyxl.load_workbook("data.xlsx", read_only=True)
+    sheet = wb.active
+    rows = sheet.iter_rows(values_only=True)
+    headers = next(rows)
+    header_map = {name: idx for idx, name in enumerate(headers)}
+    for row in rows:
+        items.append(
+            Item(
+                id=int(row[header_map["id"]]),
+                name=row[header_map["name"]],
+                value=int(row[header_map["value"]]),
+            )
+        )
+else:
+    raise FileNotFoundError("Neither data.csv nor data.xlsx found")
 
 def verify_token(request: Request):
     token = request.headers.get("Authorization")
