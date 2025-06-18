@@ -26,3 +26,17 @@ Assuming the server is running on `http://localhost:8000` and using the token `s
   curl -H "Authorization: Bearer secret-token" http://localhost:8000/items/1
   ```
 
+## Docker
+
+To build the Docker image locally run:
+
+```bash
+docker build -t csv-rest-api .
+```
+
+Start the container exposing port 8000:
+
+```bash
+docker run -p 8000:8000 csv-rest-api
+```
+
