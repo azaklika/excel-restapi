@@ -18,44 +18,40 @@ class Item(BaseModel):
     name: str
     value: int
 
-# Load data once at startup. Prefer CSV, but also handle XLSX files.
+# Load data once at startup. Prefer CSV, but handle XLSX files as a fallback.
 items: List[Item] = []
 try:
-=======
-if os.path.exists("data.csv"):
-    with open("data.csv", newline="") as csvfile:
-        reader = csv.DictReader(csvfile)
-        for row in reader:
+    if os.path.exists("data.csv"):
+        with open("data.csv", newline="") as csvfile:
+            reader = csv.DictReader(csvfile)
+            for row in reader:
+                items.append(
+                    Item(
+                        id=int(row["id"]),
+                        name=row["name"],
+                        value=int(row["value"]),
+                    )
+                )
+    elif os.path.exists("data.xlsx"):
+        wb = openpyxl.load_workbook("data.xlsx", read_only=True)
+        sheet = wb.active
+        rows = sheet.iter_rows(values_only=True)
+        headers = next(rows)
+        header_map = {name: idx for idx, name in enumerate(headers)}
+        for row in rows:
             items.append(
-                Item(id=int(row["id"]), name=row["name"], value=int(row["value"]))
-            )
-except FileNotFoundError:
-    logging.error("data.csv not found. Starting with empty item list.")
-except Exception as e:
-    logging.error(f"Failed to load CSV data: {e}")
-=======
                 Item(
-                    id=int(row["id"]),
-                    name=row["name"],
-                    value=int(row["value"]),
+                    id=int(row[header_map["id"]]),
+                    name=row[header_map["name"]],
+                    value=int(row[header_map["value"]]),
                 )
             )
-elif os.path.exists("data.xlsx"):
-    wb = openpyxl.load_workbook("data.xlsx", read_only=True)
-    sheet = wb.active
-    rows = sheet.iter_rows(values_only=True)
-    headers = next(rows)
-    header_map = {name: idx for idx, name in enumerate(headers)}
-    for row in rows:
-        items.append(
-            Item(
-                id=int(row[header_map["id"]]),
-                name=row[header_map["name"]],
-                value=int(row[header_map["value"]]),
-            )
-        )
-else:
-    raise FileNotFoundError("Neither data.csv nor data.xlsx found")
+    else:
+        raise FileNotFoundError("Neither data.csv nor data.xlsx found")
+except FileNotFoundError:
+    logging.error("Data file not found. Starting with empty item list.")
+except Exception as e:
+    logging.error(f"Failed to load data: {e}")
 
 def verify_token(request: Request):
     token = request.headers.get("Authorization")
@@ -77,9 +73,11 @@ async def unhandled_exception_handler(request: Request, exc: Exception):
     logging.exception("Unhandled error: %s", exc)
     return JSONResponse(status_code=500, content={"detail": "Internal server error"})
 
+
 @app.get("/items", response_model=List[Item])
 async def get_items(dep=Depends(verify_token)):
     return items
+
 
 @app.get("/items/{item_id}", response_model=Item)
 async def get_item(item_id: int, dep=Depends(verify_token)):
@@ -87,4 +85,3 @@ async def get_item(item_id: int, dep=Depends(verify_token)):
         if item.id == item_id:
             return item
     raise HTTPException(status_code=404, detail="Item not found")
-
