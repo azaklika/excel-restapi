@@ -37,7 +37,23 @@ Assuming the server is running on `http://localhost:8000` and using the token `s
   ```
 
 
+## Docker
+
+To build the Docker image locally run:
+
+```bash
+docker build -t csv-rest-api .
+```
+
+Start the container exposing port 8000:
+
+```bash
+docker run -p 8000:8000 csv-rest-api
+```
+=======
+
 ## OpenAPI Specification
 
 The `openapi.json` file in this repository contains the API description in the OpenAPI v3 format. It was generated from the FastAPI application and can be used to explore the endpoints or generate API clients.
+
 
